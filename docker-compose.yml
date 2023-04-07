@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./:/var/www
+      - ./_docker/nginx/conf.d:/etc/nginx/conf.d
+    ports:
+      - "2222:80"
+    depends_on:
+      - app
+    container_name: phonebook_nginx
+
+  app:
+    build:
+        context: .
+        dockerfile: _docker/app/DockerFile
+    volumes:
+      - ./:/var/www/
+    depends_on:
+      - db
+    container_name: phonebook
+
+  db:
+    image: mysql:8.0
+    restart: always
+    volumes:
+      - ./tmp/db:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: phonebook
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      -  "3333:3306"
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci
+    container_name: phonebook_db
+
