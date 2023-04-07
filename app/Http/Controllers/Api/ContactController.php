@@ -230,10 +230,10 @@ class ContactController extends Controller
 
         $contacts = Contact::where('user_id', '=', auth()->id())
             ->whereHas('numbers', function ($query) use ($keyWord){
-                $query->where('number', 'like', '%'.$keyWord.'%');
+                $query->where('number', 'like', "%{$keyWord}%");
             })
             ->orWhereHas('emails', function ($query) use ($keyWord){
-                $query->where('email', 'like', '%'.$keyWord.'%');
+                $query->where('email', 'like', "%{$keyWord}%");
             })
             ->orWhere('name', 'LIKE', "%{$keyWord}%")
             ->orWhere('surname', 'LIKE', "%{$keyWord}%")
