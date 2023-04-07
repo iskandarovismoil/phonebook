@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     private const MESSAGES = [
-        'name.required' => 'Поля имени .',
-        'surname.required' => 'Поля фамилии',
-        'email.required' => 'Bunday .',
-        'email.unique' => 'Bunday telefon raqam oldin kiritilgan.',
-        'email.exists' => 'Bunday tyoq.',
-        'password.required' => 'Parol kiritilmadi.',
-        'password.confirmed' => 'Parol va parol tasdig\'i bir xil kiritilmadi.',
-        'password.min' => 'Parol 8 ta yoki undan ko‘p simvoldan iborat bo‘lishi shart.',
+        'name.required' => 'Вы не ввели имя!',
+        'email.required' => 'Вы не ввели адрес электронной почты!',
+        'email.unique' => 'Текущий адрес электронной почты существует!',
+        'email.exists' => 'Текущий адрес электронной почты не существует!',
+        'email.email' => 'Вы ввели не корректный адрес электронной почты!',
+        'password.required' => 'Вы не ввели пароль!',
+        'password.confirmed' => 'Пароль и подтверждение пароля не совподают!',
+        'password.min' => 'Пароль должен содиржать :min или более символов',
     ];
 
     public function __construct()
@@ -32,8 +32,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'surname' => 'required',
-            'email' => 'required|unique:users',
+            'email' => 'required|unique:users|email',
             'password' => 'required|confirmed|min:8',
         ], self::MESSAGES);
 
@@ -64,7 +63,7 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|exists:users',
+            'email' => 'required|exists:users|email',
             'password' => 'required'
         ], self::MESSAGES);
 

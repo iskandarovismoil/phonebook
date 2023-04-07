@@ -18,8 +18,12 @@ use Illuminate\Support\Js;
 class ContactController extends Controller
 {
     private const MESSAGES = [
-        'name.required' => 'Поля имени .',
-        'surname.required' => 'Поля фамилии',
+        'name.required' => 'Вы не ввели имя!',
+        'surname.required' => 'Вы не ввели фамилию!',
+        'numbers.array' => 'Не корректный поля номеров!',
+        'emails.array' => 'Не корректный поля адресов электронной почты!',
+        'numbers.*.integer' => 'Номер телевона должено быть числовым!',
+        'emails.*.email' => 'Не корректный адрес электронной почты!',
     ];
 
     public function __construct()
