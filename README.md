@@ -14,6 +14,6 @@ Important commands:
 
 for installing important project libs.
 
-    php artisan jwt:secret.
+    php artisan jwt:secret
 
 for generating project JWT secret key
