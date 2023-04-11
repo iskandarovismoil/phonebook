@@ -16,4 +16,4 @@ for installing important project libs.
 
     php artisan jwt:secret.
 
-for generating project JWT secret key.
+for generating project JWT secret key
