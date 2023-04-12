@@ -2,248 +2,66 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ContactStoreRequest;
+use App\Http\Resources\ContactResource;
+use App\Interfaces\ContactRepositoryInterface;
 use App\Mail\BirthDayAlert;
 use App\Models\Contact;
 use App\Models\Email;
 use App\Models\Number;
+use App\Repositories\ContactRepository;
 use App\Utilities\Data;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class ContactController extends Controller
 {
-    private const MESSAGES = [
-        'name.required' => 'Вы не ввели имя!',
-        'surname.required' => 'Вы не ввели фамилию!',
-        'numbers.array' => 'Не корректный поля номеров!',
-        'emails.array' => 'Не корректный поля адресов электронной почты!',
-        'numbers.*.integer' => 'Номер телевона должено быть числовым!',
-        'emails.*.email' => 'Не корректный адрес электронной почты!',
-    ];
+    private ContactRepositoryInterface $contactRepository;
 
-    public function __construct()
+    public function __construct(ContactRepository $contactRepository)
     {
+        $this->contactRepository = $contactRepository;
+
         $this->middleware('jwt.verify');
     }
 
-    function get($id = null): JsonResponse {
-        if($id) {
-            $contact = Contact::where([
-                ['id', $id],
-                ['user_id', auth()->id()]
-            ]);
+    public function index(): AnonymousResourceCollection
+    {
+        $contacts = $this->contactRepository->getAll();
 
-            Mail::to($contact->user())->send(new BirthDayAlert($contact));
-
-            return Data::makeResponseForm(
-                true,
-                $contact,
-                200
-            );
-        } else {
-            $contacts = Contact::where('user_id', auth()->id())->with(['numbers', 'emails'])->get();
-
-            return Data::makeResponseForm(
-                true,
-                $contacts,
-                200
-            );
-        }
+        return ContactResource::collection($contacts);
     }
 
-    function create(Request $request): JsonResponse {
-        $data = $request->only([
-            "name",
-            "surname",
-            "patronymic",
-            "birthdate",
-            "numbers",
-            "emails",
-        ]);
+    public function show($contactId): ContactResource
+    {
+        $contact = $this->contactRepository->getById($contactId);
 
-        $validator = Validator::make($data, [
-            'name' => 'required',
-            'numbers' => 'array',
-            'emails' => 'array',
-            'numbers.*' => 'integer',
-            'emails.*' => 'email',
-        ], self::MESSAGES);
-
-        if($validator->fails()) {
-            return Data::makeResponseForm(
-                false,
-                null,
-                400,
-                $validator->errors()->toArray()
-            );
-        }
-
-        $contact = Contact::create([
-            'user_id' => auth()->id(),
-            'name' => $data['name'],
-            'surname' => $data['surname'],
-            'patronymic' => $data['patronymic'],
-            'birthdate' => $data['birthdate'],
-        ]);
-
-        if(isset($data['numbers'])) {
-            foreach ($data['numbers'] as $number) {
-                $contact->numbers()->create([
-                    'contact_id' => $contact->id,
-                    'number' => $number
-                ]);
-            }
-        }
-
-        if(isset($data['emails'])) {
-            foreach ($data['emails'] as $email) {
-                $contact->emails()->create([
-                    'contact_id' => $contact->id,
-                    'email' => $email
-                ]);
-            }
-        }
-
-        $contact = Contact::where('id', $contact->id)->with(['numbers', 'emails'])->get();
-
-        return Data::makeResponseForm(
-            true,
-            $contact,
-            200
-        );
+        return ContactResource::make($contact);
     }
 
-    function edit(Request $request, Int $id): JsonResponse {
-        $contact = Contact::where([
-            ['id', $id],
-            ['user_id', auth()->id()]
-        ]);
+    public function store(ContactStoreRequest $request): ContactResource
+    {
+        $contact = $this->contactRepository->create($request);
 
-        if(!$contact->exists()) {
-            return Data::makeResponseForm(
-                false,
-                null,
-                404,
-                "Contact not found!"
-            );
-        }
-
-        $data = $request->only([
-            "name",
-            "surname",
-            "patronymic",
-            "birthdate",
-            "numbers",
-            "emails",
-        ]);
-
-        $validator = Validator::make($data, [
-            'name' => 'required',
-            'numbers' => 'array',
-            'emails' => 'array',
-            'numbers.*.id' => 'integer|exists:numbers',
-            'numbers.*.number' => 'nullable|integer',
-            'emails.*.id' => 'integer|exists:emails',
-            'emails.*.email' => 'nullable|email',
-        ], self::MESSAGES);
-
-        if($validator->fails()){
-            return Data::makeResponseForm(
-                false,
-                null,
-                400,
-                $validator->errors()->toArray()
-            );
-        }
-
-        $contact->update([
-            'name' => $data['name'],
-            'surname' => $data['surname'],
-            'patronymic' => $data['patronymic'],
-            'birthdate' => $data['birthdate'],
-        ]);
-
-        if(isset($data['numbers'])) {
-            foreach ($data['numbers'] as $number) {
-                if(empty($number['number'])) {
-                    Number::where('id', $number['id'])->delete();
-                } else {
-                    Number::where('id', $number['id'])->update([
-                        'number' => $number['number']
-                    ]);
-                }
-            }
-        }
-
-        if(isset($data['emails'])) {
-            foreach ($data['emails'] as $email) {
-                if(empty($email['number'])) {
-                    Email::where('id', $email['id'])->delete();
-                } else {
-                    Email::where('id', $email['id'])->update([
-                        'email' => $email['email']
-                    ]);
-                }
-            }
-        }
-
-        return Data::makeResponseForm(
-            true,
-            $contact->with(['numbers', 'emails'])->get(),
-            200
-        );
+        return ContactResource::make($contact);
     }
 
-    function delete(Int $id): JsonResponse {
-        $contact = Contact::where([
-            ['id', $id],
-            ['user_id', auth()->id()]
-        ]);
+    public function update(ContactStoreRequest $request, $contactId): ContactResource
+    {
+        return print_r($contactId);
 
-        if(!$contact->exists()) {
-            return Data::makeResponseForm(
-                false,
-                null,
-                404,
-                "Contact not found!"
-            );
-        }
+        $contact = $this->contactRepository->update($request, $contactId);
 
-        Number::where('contact_id', $id)->delete();
-        Email::where('contact_id', $id)->delete();
-        $contact->delete();
-
-        return Data::makeResponseForm(
-            true,
-            null,
-            200
-        );
+        return ContactResource::make($contact);
     }
 
-    function search(Request $request): JsonResponse {
-        $data = $request->only([
-            "keyword",
-        ]);
+    public function destroy(Contact $contact): ContactResource
+    {
+        $contact = $this->contactRepository->delete($contact);
 
-        $keyWord = $data['keyword'];
-
-        $contacts = Contact::where('user_id', '=', auth()->id())
-            ->whereHas('numbers', function ($query) use ($keyWord){
-                $query->where('number', 'like', "%{$keyWord}%");
-            })
-            ->orWhereHas('emails', function ($query) use ($keyWord){
-                $query->where('email', 'like', "%{$keyWord}%");
-            })
-            ->orWhere('name', 'LIKE', "%{$keyWord}%")
-            ->orWhere('surname', 'LIKE', "%{$keyWord}%")
-            ->orWhere('patronymic', 'LIKE', "%{$keyWord}%");
-
-        return Data::makeResponseForm(
-            true,
-            $contacts->with(['numbers', 'emails'])->get(),
-            200
-        );
+        return ContactResource::make($contact);
     }
 }

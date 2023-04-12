@@ -27,14 +27,17 @@ Route::group([
     Route::get('/user', [AuthController::class, 'user'])->name('user');
 });
 
-Route::group([
-    'prefix' => 'contacts',
-    'name' => 'contacts'
-], function () {
-    Route::get('/', [ContactController::class, 'get'])->name('get');
-    Route::get('/{id}', [ContactController::class, 'get'])->name('get_by_id');
-    Route::post('/create', [ContactController::class, 'create'])->name('create');
-    Route::post('/{id}/edit', [ContactController::class, 'edit'])->name('edit');
-    Route::post('/{id}/delete', [ContactController::class, 'delete'])->name('delete');
-    Route::post('/search', [ContactController::class, 'search'])->name('search');
-});
+//Route::group([
+//    'prefix' => 'contacts',
+//    'name' => 'contacts'
+//], function () {
+//    Route::get('/', [ContactController::class, 'get'])->name('get');
+//    Route::get('/{id}', [ContactController::class, 'get'])->name('get_by_id');
+//    Route::post('/create', [ContactController::class, 'create'])->name('create');
+//    Route::post('/{id}/edit', [ContactController::class, 'edit'])->name('edit');
+//    Route::post('/{id}/delete', [ContactController::class, 'delete'])->name('delete');
+//    Route::post('/search', [ContactController::class, 'search'])->name('search');
+//});
+
+Route::post('contacts/search', [ContactController::class, 'search'])->name('search');
+Route::apiResource('contacts', ContactController::class);
