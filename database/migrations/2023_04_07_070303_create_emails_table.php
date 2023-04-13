@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('emails', function (Blueprint $table) {
             $table->id();
+            $table->bigInteger('user_id');
             $table->bigInteger('contact_id');
             $table->string('email');
             $table->timestamps();
