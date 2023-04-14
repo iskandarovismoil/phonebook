@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Validator;
 class ContactController extends Controller
 {
     protected ContactService $contactService;
+//    protected ContactService $contactService;
+//    protected ContactService $contactService;
 
     public function __construct(ContactService $contactService)
     {
@@ -67,13 +69,8 @@ class ContactController extends Controller
         return ContactResource::make($contact);
     }
 
-    public function update(ContactUpdateRequest $request, $contactId)
+    public function update(ContactUpdateRequest $request, $contactId): ContactResource
     {
-        $contact = Contact::where([
-            ['id', $contactId],
-            ['user_id', auth()->id()]
-        ]);
-
         $data = $request->only([
             "name",
             "surname",
@@ -83,27 +80,21 @@ class ContactController extends Controller
             "emails",
         ]);
 
-//        $contact = $this->contactService->update(
-//            auth()->id(),
-//            $contactId,
-//            $data
-//        );
+        $contact = $this->contactService->update(
+            auth()->id(),
+            $contactId,
+            $data
+        );
 
-        $contact->update([
-            'name' => $data['name'],
-            'surname' => $data['surname'],
-            'patronymic' => $data['patronymic'],
-            'birthdate' => $data['birthdate'],
-        ]);
-
-        return print_r($contact->get());
-
-        //return ContactResource::make($contact);
+        return ContactResource::make($contact);
     }
 
-    public function destroy(Contact $contact): ContactResource
+    public function destroy($contactId): ContactResource
     {
-        $contact = $this->contactService->destroy($contact);
+        $contact = $this->contactService->destroy(
+            auth()->id(),
+            $contactId
+        );
 
         return ContactResource::make($contact);
     }

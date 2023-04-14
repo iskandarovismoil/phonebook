@@ -64,72 +64,83 @@ class ContactService
 
         $emailService = new EmailService();
 
-//        $contact = Contact::where([
-//            ['id', $contactId],
-//            ['user_id', $userId]
-//        ]);
-//
-//        $contact->update([
-//            'name' => $data['name'],
-//            'surname' => $data['surname'],
-//            'patronymic' => $data['patronymic'],
-//            'birthdate' => $data['birthdate']
-//        ]);
+        $contact = Contact::findOrFail($contactId);
+
+        if($contact->user_id == $userId) {
+            $contact->update([
+                'name' => $data['name'],
+                'surname' => $data['surname'],
+                'patronymic' => $data['patronymic'],
+                'birthdate' => $data['birthdate']
+            ]);
 
 
-//        if(isset($data['numbers'])) {
-//            foreach ($data['numbers'] as $number) {
-//                $numberId = $number['id'];
-//                $number = $number['number'];
-//
-//                if(empty($number)) {
-//                    $numberService->destroy(
-//                        $numberId,
-//                        $userId,
-//                        $contactId
-//                    );
-//                } else {
-//                    $numberService->update(
-//                        $numberId,
-//                        $userId,
-//                        $contactId,
-//                        $number
-//                    );
-//                }
-//            }
-//        }
-//
-//        if(isset($data['emails'])) {
-//            foreach ($data['emails'] as $email) {
-//                $emailId = $email['id'];
-//                $email = $email['email'];
-//
-//                if(empty($email)) {
-//                    $emailService->destroy(
-//                        $emailId,
-//                        $userId,
-//                        $contactId
-//                    );
-//                } else {
-//                    $emailService->update(
-//                        $emailId,
-//                        $userId,
-//                        $contactId,
-//                        $email
-//                    );
-//                }
-//            }
-//        }
+            if (isset($data['numbers'])) {
+                foreach ($data['numbers'] as $number) {
+                    $numberId = $number['id'];
+                    $number = $number['number'];
+
+                    if (empty($number)) {
+                        $numberService->destroy(
+                            $numberId,
+                            $userId,
+                            $contactId
+                        );
+                    } else {
+                        $numberService->update(
+                            $numberId,
+                            $userId,
+                            $contactId,
+                            $number
+                        );
+                    }
+                }
+            }
+
+            if (isset($data['emails'])) {
+                foreach ($data['emails'] as $email) {
+                    $emailId = $email['id'];
+                    $email = $email['email'];
+
+                    if (empty($email)) {
+                        $emailService->destroy(
+                            $emailId,
+                            $userId,
+                            $contactId
+                        );
+                    } else {
+                        $emailService->update(
+                            $emailId,
+                            $userId,
+                            $contactId,
+                            $email
+                        );
+                    }
+                }
+            }
+        }
 
         return $contact;
     }
 
-    public function destroy($contactId)
+    public function destroy($userId, $contactId): bool
     {
-        $contact->transaction(function() {
-            $this->numbers()->delete();
-            $this->emails()->delete();
-            parent::delete();
-        });
+        $numberService = new NumberService();
+
+        $emailService = new EmailService();
+
+        $contact = Contact::findOrFail($contactId);
+
+        if($contact->user_id == $userId) {
+            $numberService->destroyByContactId($contactId);
+
+            $emailService->destroyByContactId($contactId);
+
+            $contact->delete();
+
+            return true;
+        }
+
+        return false;
     }
 }
